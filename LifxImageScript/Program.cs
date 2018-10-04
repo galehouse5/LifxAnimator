@@ -16,13 +16,13 @@ namespace LifxImageScript
     {
         class Options
         {
-            [Option("path", Required = true, HelpText = "Path of script image." +
-                " Image height should correspond with the number of scripted lights." +
-                " Image width should correspond with the number of scripted frames.")]
+            [Option("path", Required = true, HelpText = "Path of image script." +
+                " Image height should correspond to number of scripted lights." +
+                " Image width should correspond to number of scripted frames.")]
             public string Path { get; set; }
 
-            [Option("lights", Required = true, Min = 1, HelpText = "IP address of script lights." +
-                " Order is important. The first light maps to the top row of the script image, etc.")]
+            [Option("lights", Required = true, Min = 1, HelpText = "IP address list of lights." +
+                " Order is important. The first light maps to the topmost row of image script, etc.")]
             public IReadOnlyCollection<string> Lights { get; set; }
 
             [Option("fps", Default = 1)]
@@ -34,7 +34,7 @@ namespace LifxImageScript
             [Option("smooth", HelpText = "Transition smoothly between frames.")]
             public bool SmoothTransitions { get; set; }
 
-            [Option("brightness-factor", Default = 1f, HelpText = "Scales brightness (primarily so you don't go blind when testing a script).")]
+            [Option("brightness-factor", Default = 1f, HelpText = "Scales down brightness so you don't need sunglasses when testing.")]
             public float BrightnessFactor { get; set; }
 
             public IEnumerable<string> Validate()
@@ -86,6 +86,7 @@ namespace LifxImageScript
                 {
                     for (int i = 0; i < script.Width; i++)
                     {
+                        Console.Clear();
                         Console.SetCursorPosition(0, 0);
                         Console.WriteLine($"Rendering frame {i + 1} / {script.Width}:");
 
@@ -97,12 +98,12 @@ namespace LifxImageScript
                                 transitionDuration: options.SmoothTransitions ? frameDuration : 0);
                         }
 
+                        Console.WriteLine();
+                        Console.WriteLine("Press any key to stop...");
                         await Task.Delay(frameDuration, cancellationToken);
                     }
                 }
                 while (options.Repeat && !cancellationToken.IsCancellationRequested);
-
-                Console.Clear();
             }
         }
 
@@ -119,10 +120,8 @@ namespace LifxImageScript
                     }
 
                     CancellationTokenSource cts = new CancellationTokenSource();
-                    var runner = Run(o, cts.Token);
-
-                    Console.ReadKey();
-                    cts.Cancel();
+                    Task.Run(() => { Console.ReadKey(); cts.Cancel(); });
+                    try { Run(o, cts.Token).Wait(); } catch { }
                 });
         }
     }
