@@ -39,10 +39,10 @@ The following command executes a script named `hello-world.bmp` for 2 lights at 
   <dt>--fps (optional, default=1)</dt>
   <dd>Frames per second. Limited to 20, the max recommended send rate of the LIFX LAN protocol.</dd>
   
-  <dt>--repeat (optional, default=off)</dt>
-  <dd>Repeats image script until it's stopped by key press.</dd>
+  <dt>--repeat-count (optional, default=0)</dt>
+  <dd>Repeats image script a specific number of times. A negative number signifies to repeat until stopped.</dd>
   
-  <dt>--smooth (optional, default=off)</dt>
+  <dt>--smooth-transitions (optional, default=off)</dt>
   <dd>Smoothly transitions color and brightness between frames. When disabled, frame changes may create an undesirable strobe effect.</dd>
   
   <dt>--brightness-factor (optional, default=1)</dt>

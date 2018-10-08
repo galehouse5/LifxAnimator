@@ -28,10 +28,12 @@ namespace LifxImageScript
             [Option("fps", Default = 1)]
             public int FramesPerSecond { get; set; }
 
-            [Option("repeat")]
-            public bool Repeat { get; set; }
+            [Option("repeat-count", Default = 0, HelpText = "A negative number signifies to repeat until stopped.")]
+            public int RepeatCount { get; set; }
 
-            [Option("smooth", HelpText = "Transition smoothly between frames.")]
+            public bool RepeatUntilStopped => RepeatCount < 0;
+
+            [Option("smooth-transitions", HelpText = "Prevents a strobe effect when transitioning between frames.")]
             public bool SmoothTransitions { get; set; }
 
             [Option("brightness-factor", Default = 1f, HelpText = "Scales down brightness so you don't need sunglasses when testing.")]
@@ -82,28 +84,31 @@ namespace LifxImageScript
 
             using (UdpClient client = new UdpClient())
             {
-                do
+                for (int i = 0; i <= options.RepeatCount || options.RepeatUntilStopped; i++)
                 {
-                    for (int i = 0; i < script.Width; i++)
+                    for (int j = 0; j < script.Width; j++)
                     {
+                        if (cancellationToken.IsCancellationRequested) break;
+
                         Console.Clear();
                         Console.SetCursorPosition(0, 0);
-                        Console.WriteLine($"Rendering frame {i + 1} / {script.Width}:");
+                        Console.WriteLine($"Rendering frame {j + 1} / {script.Width}:");
 
                         foreach (ScriptedLight light in lights)
                         {
-                            Rgb24 color = light.GetColor(i);
+                            Rgb24 color = light.GetColor(j);
                             Console.WriteLine($" - {light.EndPoint.Address}: R={color.R:d3}, G={color.G:d3}, B={color.B:d3}");
-                            Task forget = light.SendSetColorMessage(i, client,
+                            Task forget = light.SendSetColorMessage(j, client,
                                 transitionDuration: options.SmoothTransitions ? frameDuration : 0);
                         }
 
                         Console.WriteLine();
-                        Console.WriteLine("Press any key to stop...");
+                        Console.WriteLine(options.RepeatUntilStopped ? "Repeating until stopped. Press any key to stop..."
+                            : options.RepeatCount > 0 ? $"Repeating {options.RepeatCount - i} more time(s). Press any key to stop..."
+                            : "Press any key to stop...");
                         await Task.Delay(frameDuration, cancellationToken);
                     }
                 }
-                while (options.Repeat && !cancellationToken.IsCancellationRequested);
             }
         }
 
