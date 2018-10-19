@@ -1,55 +1,55 @@
-# LifxImageScript
-Command line tool that lets you script a modest light show for your LIFX lights using only an image editor. Makes use of the LIFX LAN protocol.
+# LIFX Animator
+Command line tool that animates your LIFX lights using sequences you create with an image editor. Makes use of the LIFX LAN protocol.
 
-![Example recording](/ReadmeAssets/recording.gif)
+![Example recording](/Readme/recording.gif)
 
-## Image Scripts
-An image script is just a normal image file that's interpreted in a special way. Horizontal rows of pixels represent lights and vertical columns of pixels represent frames. An image is read from left to right one frame at a time. The RGB color values in a frame are converted to HSV color values and sent to the corresponding light. Frame rate is configurable up to 20 fps, the max recommended send rate of the LIFX LAN protocol.
+## Sequences
+A sequence is described by an RGB image file (transparency byte is ignored). Pixel rows correspond to lights and pixel columns correspond to frames. A frame describes a color for each light. The frame corresponding to the leftmost pixel column is rendered first, then remaining frames are rendered left to right, in sequence. Frame rate is configurable up to a maximum of 20 fps, a limitation of the LIFX LAN protocol.
 
 ### Example 1
-This image script creates a red orb that bounces back and forth between four lights. Note that the image has been enlarged for display so it's no longer intended for use as an image script. The working image script has much smaller dimensions.
+This sequence creates a red orb that bounces between four lights. Note that the image has been enlarged for display. The original pixel dimensions were 88 x 4.
 
-![Bouncing orb effect](/ReadmeAssets/bouncing-orb-effect.png)
+![Bouncing orb effect](/Readme/bouncing-orb-effect.png)
 
 ### Example 2
-This image script creates a red orb that bounces at an accelerating rate until exploding in a burst of yellow light that trails off with a sparkling effect. Again, the image has been enlarged for display.
+This sequence creates a red orb that explodes with a shimmer effect. Note that this image has also been enlarged for display.
 
-![Exploding orb effect](/ReadmeAssets/exploding-orb-effect.png)
+![Exploding orb effect](/Readme/exploding-orb-effect.png)
 
 ### Example 3
-This is the actual image script for the light show recording at the top of the page. The red bouncing orb and exploding orb effect are contained within this script. The image hasn't been enlarged for display so it's best viewed under high magnification.
+This is the actual sequence used for the GIF above.
 
-![Bouncing and exploding orb script](/ReadmeAssets/script.bmp)
+![Bouncing and exploding orb script](/Readme/script.bmp)
 
 ## Command Line Reference
 
 ### Example
-The following command executes a script named `hello-world.bmp` for 2 lights at 20 fps, repeating until it's stopped by key press. Lights are specified by IP address and their order corresponds to the order of horizontal rows in the image script. Light `192.168.1.89` is mapped to the topmost horizontal row. The `--smooth` flag indicates that lights should transition their color and brightness smoothly between frames.
+The following command executes a sequence named `sequence1.bmp` for 2 lights at 20 fps, repeating until stopped by key press. The top pixel row of the sequence image maps to light `192.168.1.89` because it is ordered first.
 
-`dotnet LifxImageScript.dll --path "hello-world.bmp" --lights 192.168.1.89 192.168.1.88 --fps 20 --smooth --repeat`
+`dotnet LifxAnimator.dll --path "sequence1.bmp" --lights 192.168.1.89 192.168.1.88 --fps 20 --repeat-count -1`
 
 ### Parameters
 <dl>
   <dt>--path</dt>
-  <dd>Path of image script.</dd>
+  <dd>Path of sequence image. Pixel rows correspond to lights and pixel columns correspond to frames.</dd>
   
   <dt>--lights</dt>
-  <dd>IP address list of lights. Order is important. The first light maps to the topmost horizontal row of image script.</dd>
+  <dd>Space-separated list of IP addresses. Order is important. The first light maps to the topmost pixel row of the sequence image.</dd>
   
   <dt>--fps (optional, default=1)</dt>
   <dd>Frames per second. Limited to 20, the max recommended send rate of the LIFX LAN protocol.</dd>
   
   <dt>--repeat-count (optional, default=0)</dt>
-  <dd>Repeats image script a specific number of times. A negative number signifies to repeat until stopped.</dd>
+  <dd>A negative number repeats until stopped.</dd>
   
   <dt>--smooth-transitions (optional, default=off)</dt>
-  <dd>Smoothly transitions color and brightness between frames. When disabled, frame changes may create an undesirable strobe effect.</dd>
+  <dd>Smoothly adjust color and brightness when transitioning frames.</dd>
   
   <dt>--brightness-factor (optional, default=1)</dt>
-  <dd>Useful for scaling down brightness when testing a script. Accepts decimal values between 0 and 1.</dd>
+  <dd>Scales brightness so you don't need sunglasses while testing. Accepts decimal values between 0 and 1.</dd>
 </dl>
 
 ## Download
-LifxImageScript requires the .NET Core Runtime, which is available for Windows, Linux, and macOS.
+LIFX Animator requires the .NET Core Runtime, which is available for Windows, Linux, and macOS.
 1. [Download .NET Core Runtime](https://www.microsoft.com/net/download)
-2. [Download LifxImageScript](https://github.com/galehouse5/LifxImageScript/releases/latest)
+2. [Download LIFX Animator](https://github.com/galehouse5/LifxAnimator/releases/latest)
