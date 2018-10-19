@@ -1,30 +1,32 @@
 # LIFX Animator
-Command line tool that animates your LIFX lights using sequences you create with an image editor. Makes use of the LIFX LAN protocol.
+Command line tool that animates your LIFX lights using sequences you create with an image editor.
 
 ![Example recording](/Readme/recording.gif)
 
+This tool uses the LIFX LAN protocol because it's capable of updating a light's color more frequently than the HTTP API.
+
 ## Sequences
-A sequence is described by an RGB image file (transparency byte is ignored). Pixel rows correspond to lights and pixel columns correspond to frames. A frame describes a color for each light. The frame corresponding to the leftmost pixel column is rendered first, then remaining frames are rendered left to right, in sequence. Frame rate is configurable up to a maximum of 20 fps, a limitation of the LIFX LAN protocol.
+A sequence is described by an RGB image file (transparency byte is ignored). Pixel rows correspond to lights and pixel columns correspond to frames. A frame designates a color for each light. The frame corresponding to the leftmost pixel column is rendered first,  then the frame to its right is rendered, and so on. By default, each frame is displayed for 1/10th of a second before the next frame is rendered.
 
 ### Example 1
-This sequence creates a red orb that bounces between four lights. Note that the image has been enlarged for display. The original pixel dimensions were 88 x 4.
+This sequence creates a red orb that bounces between four lights. (Note the image is enlarged for display.)
 
 ![Bouncing orb effect](/Readme/bouncing-orb-effect.png)
 
 ### Example 2
-This sequence creates a red orb that explodes with a shimmer effect. Note that this image has also been enlarged for display.
+This sequence creates a red orb that explodes with a shimmer effect. (Note the image is enlarged for display.)
 
 ![Exploding orb effect](/Readme/exploding-orb-effect.png)
 
 ### Example 3
-This is the actual sequence used for the GIF above.
+This is the actual sequence used for the GIF recording at the top of the page.
 
 ![Bouncing and exploding orb script](/Readme/script.bmp)
 
 ## Command Line Reference
 
 ### Example
-The following command executes a sequence named `sequence1.bmp` for 2 lights at 20 fps, repeating until stopped by key press. The top pixel row of the sequence image maps to light `192.168.1.89` because it is ordered first.
+The following command executes a sequence named `sequence1.bmp` for 2 lights at 20 fps, repeating until stopped by key press. The top pixel row of the sequence maps to light `192.168.1.89` because of its order.
 
 `dotnet LifxAnimator.dll --path "sequence1.bmp" --lights 192.168.1.89 192.168.1.88 --fps 20 --repeat-count -1`
 
@@ -34,9 +36,9 @@ The following command executes a sequence named `sequence1.bmp` for 2 lights at 
   <dd>Path of sequence image. Pixel rows correspond to lights and pixel columns correspond to frames.</dd>
   
   <dt>--lights</dt>
-  <dd>Space-separated list of IP addresses. Order is important. The first light maps to the topmost pixel row of the sequence image.</dd>
+  <dd>Space-separated, ordered list of IP addresses. The first light maps to the topmost pixel row of the sequence image.</dd>
   
-  <dt>--fps (optional, default=1)</dt>
+  <dt>--fps (optional, default=10)</dt>
   <dd>Frames per second. Limited to 20, the max recommended send rate of the LIFX LAN protocol.</dd>
   
   <dt>--repeat-count (optional, default=0)</dt>

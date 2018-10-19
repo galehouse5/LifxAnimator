@@ -20,11 +20,11 @@ namespace LifxAnimator
                 + " Pixel rows correspond to lights and pixel columns correspond to frames.")]
             public string Path { get; set; }
 
-            [Option("lights", Required = true, Min = 1, HelpText = "Space-separated list of IP addresses. Order is important." +
-                " The first light maps to the topmost pixel row of the sequence image.")]
+            [Option("lights", Required = true, Min = 1, HelpText = "Space-separated, ordered list of IP addresses."
+                + " The first light maps to the topmost pixel row of the sequence image.")]
             public IReadOnlyCollection<string> Lights { get; set; }
 
-            [Option("fps", Default = 1)]
+            [Option("fps", Default = 10)]
             public int FramesPerSecond { get; set; }
 
             [Option("repeat-count", Default = 0, HelpText = "A negative number repeats until stopped.")]
