@@ -6,27 +6,27 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace LifxImageScript
+namespace LifxAnimator
 {
-    public class ScriptedLight
+    public class LifxLight
     {
-        private readonly Image<Rgb24> script;
-        private readonly int scriptRowIndex;
+        private readonly Image<Rgb24> sequence;
+        private readonly int sequenceIndex;
         private ILifxHsbkData lastSetColor;
 
-        public ScriptedLight(
-            IPAddress ip, Image<Rgb24> script, int scriptRowIndex)
+        public LifxLight(
+            IPAddress ip, Image<Rgb24> sequence, int sequenceIndex)
         {
             EndPoint = new IPEndPoint(ip, 56700);
-            this.script = script;
-            this.scriptRowIndex = scriptRowIndex;
+            this.sequence = sequence;
+            this.sequenceIndex = sequenceIndex;
         }
 
         public IPEndPoint EndPoint { get; }
         public float BrightnessFactor { get; set; } = 1f;
 
         public Rgb24 GetColor(int frameIndex)
-            => script[x: frameIndex, y: scriptRowIndex];
+            => sequence[x: frameIndex, y: sequenceIndex];
 
         public async Task SendSetColorMessage(int frameIndex, UdpClient client,
             int transitionDuration = 0)

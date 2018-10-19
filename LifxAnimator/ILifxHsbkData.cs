@@ -1,7 +1,7 @@
 ﻿using SixLabors.ImageSharp.PixelFormats;
 using System;
 
-namespace LifxImageScript
+namespace LifxAnimator
 {
     public interface ILifxHsbkData
     {

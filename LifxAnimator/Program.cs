@@ -10,33 +10,32 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LifxImageScript
+namespace LifxAnimator
 {
     class Program
     {
         class Options
         {
-            [Option("path", Required = true, HelpText = "Path of image script." +
-                " Image height should correspond to number of scripted lights." +
-                " Image width should correspond to number of scripted frames.")]
+            [Option("path", Required = true, HelpText = "Path of sequence image."
+                + " Pixel rows correspond to lights and pixel columns correspond to frames.")]
             public string Path { get; set; }
 
-            [Option("lights", Required = true, Min = 1, HelpText = "IP address list of lights." +
-                " Order is important. The first light maps to the topmost row of image script, etc.")]
+            [Option("lights", Required = true, Min = 1, HelpText = "Space-separated list of IP addresses. Order is important." +
+                " The first light maps to the topmost pixel row of the sequence image.")]
             public IReadOnlyCollection<string> Lights { get; set; }
 
             [Option("fps", Default = 1)]
             public int FramesPerSecond { get; set; }
 
-            [Option("repeat-count", Default = 0, HelpText = "A negative number signifies to repeat until stopped.")]
+            [Option("repeat-count", Default = 0, HelpText = "A negative number repeats until stopped.")]
             public int RepeatCount { get; set; }
 
             public bool RepeatUntilStopped => RepeatCount < 0;
 
-            [Option("smooth-transitions", HelpText = "Prevents a strobe effect when transitioning between frames.")]
+            [Option("smooth-transitions", HelpText = "Smoothly adjust color and brightness when transitioning frames.")]
             public bool SmoothTransitions { get; set; }
 
-            [Option("brightness-factor", Default = 1f, HelpText = "Scales down brightness so you don't need sunglasses when testing.")]
+            [Option("brightness-factor", Default = 1f, HelpText = "Scales brightness so you don't need sunglasses while testing.")]
             public float BrightnessFactor { get; set; }
 
             public IEnumerable<string> Validate()
@@ -47,10 +46,10 @@ namespace LifxImageScript
                 var image = Image.Load(Path);
 
                 if (image.Height < Lights.Count())
-                    yield return $"Script can't handle more than {image.Height} light(s).";
+                    yield return $"Sequence can't handle more than {image.Height} light(s).";
 
                 if (FramesPerSecond <= 0m || FramesPerSecond > 20m)
-                    yield return "Frames per second must be greater than 0 and less than or equal to 20.";
+                    yield return "FPS must be greater than 0 and less than or equal to 20.";
 
                 foreach (string light in Lights)
                 {
@@ -74,9 +73,9 @@ namespace LifxImageScript
 
         static async Task Run(Options options, CancellationToken cancellationToken)
         {
-            var script = Image.Load<Rgb24>(options.Path);
+            var sequence = Image.Load<Rgb24>(options.Path);
             var lights = options.Lights.Select(IPAddress.Parse)
-                .Select((ip, i) => new ScriptedLight(ip, script, i)
+                .Select((ip, i) => new LifxLight(ip, sequence, i)
                 {
                     BrightnessFactor = options.BrightnessFactor
                 }).ToArray();
@@ -86,15 +85,15 @@ namespace LifxImageScript
             {
                 for (int i = 0; i <= options.RepeatCount || options.RepeatUntilStopped; i++)
                 {
-                    for (int j = 0; j < script.Width; j++)
+                    for (int j = 0; j < sequence.Width; j++)
                     {
                         if (cancellationToken.IsCancellationRequested) break;
 
                         Console.Clear();
                         Console.SetCursorPosition(0, 0);
-                        Console.WriteLine($"Rendering frame {j + 1} / {script.Width}:");
+                        Console.WriteLine($"Rendering frame {j + 1} / {sequence.Width}:");
 
-                        foreach (ScriptedLight light in lights)
+                        foreach (LifxLight light in lights)
                         {
                             Rgb24 color = light.GetColor(j);
                             Console.WriteLine($" - {light.EndPoint.Address}: R={color.R:d3}, G={color.G:d3}, B={color.B:d3}");

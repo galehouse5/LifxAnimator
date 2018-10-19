@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace LifxImageScript
+namespace LifxAnimator
 {
     public struct LifxSetColorMessage : ILifxMessage, ILifxHsbkData
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace LifxImageScript
+namespace LifxAnimator
 {
     public enum LifxMessageType : UInt16
     {

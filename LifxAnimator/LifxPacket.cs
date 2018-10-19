@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace LifxImageScript
+namespace LifxAnimator
 {
     // Reference: https://lan.developer.lifx.com/docs/header-description
     public struct LifxPacket
