@@ -3,6 +3,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -79,12 +80,17 @@ namespace LifxAnimator
                 {
                     BrightnessFactor = options.BrightnessFactor
                 }).ToArray();
-            int frameDuration = 1000 / options.FramesPerSecond;
+            var lightMessages = new Task[lights.Length];
+            int transitionDuration = 1000 / options.FramesPerSecond;
+            int frameCount = 0;
+            Stopwatch frameTimer = Stopwatch.StartNew();
 
             using (UdpClient client = new UdpClient())
             {
                 for (int i = 0; i <= options.RepeatCount || options.RepeatUntilStopped; i++)
                 {
+                    if (cancellationToken.IsCancellationRequested) break;
+
                     for (int j = 0; j < sequence.Width; j++)
                     {
                         if (cancellationToken.IsCancellationRequested) break;
@@ -93,19 +99,30 @@ namespace LifxAnimator
                         Console.SetCursorPosition(0, 0);
                         Console.WriteLine($"Rendering frame {j + 1} / {sequence.Width}:");
 
-                        foreach (LifxLight light in lights)
+                        for (int k = 0; k < lights.Length; k++)
                         {
+                            LifxLight light = lights[k];
                             Rgb24 color = light.GetColor(j);
                             Console.WriteLine($" - {light.EndPoint.Address}: R={color.R:d3}, G={color.G:d3}, B={color.B:d3}");
-                            Task forget = light.SendSetColorMessage(j, client,
-                                transitionDuration: options.SmoothTransitions ? frameDuration : 0);
+
+                            lightMessages[k] = Task.Run(() => light.SendSetColorMessage(j, client,
+                                transitionDuration: options.SmoothTransitions ? transitionDuration : 0),
+                                cancellationToken: cancellationToken);
                         }
 
                         Console.WriteLine();
                         Console.WriteLine(options.RepeatUntilStopped ? "Repeating until stopped. Press any key to stop..."
                             : options.RepeatCount > 0 ? $"Repeating {options.RepeatCount - i} more time(s). Press any key to stop..."
                             : "Press any key to stop...");
-                        await Task.Delay(frameDuration, cancellationToken);
+
+                        await Task.WhenAll(lightMessages);
+                        frameCount++;
+
+                        int nextFrameTime = frameCount * 1000 / options.FramesPerSecond;
+                        // Don't use `Task.Delay` because it's only accurate to 15.6 ms on Windows. See:
+                        // https://stackoverflow.com/questions/3744032/why-are-net-timers-limited-to-15-ms-resolution
+                        SpinWait.SpinUntil(() => frameTimer.ElapsedMilliseconds >= nextFrameTime
+                            || cancellationToken.IsCancellationRequested);
                     }
                 }
             }
