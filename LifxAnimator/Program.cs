@@ -3,11 +3,9 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,13 +23,14 @@ namespace LifxAnimator
                 + " The first light maps to the topmost pixel row of the sequence image.")]
             public IReadOnlyCollection<string> Lights { get; set; }
 
-            [Option("fps", Default = 10)]
+            [Option("fps", Default = 20)]
             public int FramesPerSecond { get; set; }
 
-            [Option("repeat-count", Default = 0, HelpText = "A negative number repeats until stopped.")]
-            public int RepeatCount { get; set; }
+            [Option("repeat-count")]
+            public int? RepeatCount { get; set; }
 
-            public bool RepeatUntilStopped => RepeatCount < 0;
+            [Option("repeat-seconds")]
+            public int? RepeatSeconds { get; set; }
 
             [Option("smooth-transitions", HelpText = "Smoothly adjust color and brightness when transitioning frames.")]
             public bool SmoothTransitions { get; set; }
@@ -48,6 +47,9 @@ namespace LifxAnimator
 
                 if (image.Height < Lights.Count())
                     yield return $"Sequence can't handle more than {image.Height} light(s).";
+
+                if (RepeatCount.HasValue && RepeatSeconds.HasValue)
+                    yield return "Repeat count and repeat seconds can't both be specified.";
 
                 if (FramesPerSecond <= 0m || FramesPerSecond > 20m)
                     yield return "FPS must be greater than 0 and less than or equal to 20.";
@@ -80,51 +82,42 @@ namespace LifxAnimator
                 {
                     BrightnessFactor = options.BrightnessFactor
                 }).ToArray();
-            var lightMessages = new Task[lights.Length];
-            int transitionDuration = 1000 / options.FramesPerSecond;
-            int frameCount = 0;
-            Stopwatch frameTimer = Stopwatch.StartNew();
+            int initialConsoleCursorTop = Console.CursorTop;
 
-            using (UdpClient client = new UdpClient())
+            using (RenderingLoop loop = new RenderingLoop(
+                sequence: Image.Load<Rgb24>(options.Path),
+                lights: options.Lights
+                    .Select(IPAddress.Parse)
+                    .Select((ip, i) => new LifxLight(ip, sequence, i) { BrightnessFactor = options.BrightnessFactor })
+                    .ToArray(),
+                framesPerSecond: options.FramesPerSecond)
             {
-                for (int i = 0; i <= options.RepeatCount || options.RepeatUntilStopped; i++)
+                RepeatCount = options.RepeatCount,
+                RepeatMilliseconds = options.RepeatSeconds * 1000L,
+                SmoothTransitions = options.SmoothTransitions,
+
+                OnRenderingFrame = (frameNumber, loop2) =>
                 {
-                    if (cancellationToken.IsCancellationRequested) break;
+                    Console.SetCursorPosition(0, initialConsoleCursorTop);
+                    ConsoleHelper.OverwriteLine($"Rendering frame {frameNumber} / {loop2.FrameCount}:");
+                },
 
-                    for (int j = 0; j < sequence.Width; j++)
-                    {
-                        if (cancellationToken.IsCancellationRequested) break;
+                OnRenderingLight = (light, color, loop2) =>
+                {
+                    ConsoleHelper.OverwriteLine($" - {light.EndPoint.Address}: R={color.R:d3}, G={color.G:d3}, B={color.B:d3}");
+                },
 
-                        Console.Clear();
-                        Console.SetCursorPosition(0, 0);
-                        Console.WriteLine($"Rendering frame {j + 1} / {sequence.Width}:");
-
-                        for (int k = 0; k < lights.Length; k++)
-                        {
-                            LifxLight light = lights[k];
-                            Rgb24 color = light.GetColor(j);
-                            Console.WriteLine($" - {light.EndPoint.Address}: R={color.R:d3}, G={color.G:d3}, B={color.B:d3}");
-
-                            lightMessages[k] = Task.Run(() => light.SendSetColorMessage(j, client,
-                                transitionDuration: options.SmoothTransitions ? transitionDuration : 0),
-                                cancellationToken: cancellationToken);
-                        }
-
-                        Console.WriteLine();
-                        Console.WriteLine(options.RepeatUntilStopped ? "Repeating until stopped. Press any key to stop..."
-                            : options.RepeatCount > 0 ? $"Repeating {options.RepeatCount - i} more time(s). Press any key to stop..."
-                            : "Press any key to stop...");
-
-                        await Task.WhenAll(lightMessages);
-                        frameCount++;
-
-                        int nextFrameTime = frameCount * 1000 / options.FramesPerSecond;
-                        // Don't use `Task.Delay` because it's only accurate to 15.6 ms on Windows. See:
-                        // https://stackoverflow.com/questions/3744032/why-are-net-timers-limited-to-15-ms-resolution
-                        SpinWait.SpinUntil(() => frameTimer.ElapsedMilliseconds >= nextFrameTime
-                            || cancellationToken.IsCancellationRequested);
-                    }
+                OnFrameRendered = (repeatNumber, elapsedMilliseconds, loop2) =>
+                {
+                    ConsoleHelper.OverwriteLine();
+                    ConsoleHelper.OverwriteLine(loop2.RepeatUntilCancelled ? "Repeating until stopped. Press any key to stop..."
+                        : loop2.RepeatCount.HasValue ? $"Repeating {loop2.RepeatCount - repeatNumber} more time(s). Press any key to stop..."
+                        : loop2.RepeatMilliseconds.HasValue ? $"Repeating for {(loop2.RepeatMilliseconds - elapsedMilliseconds) / 1000f:n2} more second(s). Press any key to stop..."
+                        : throw new NotSupportedException());
                 }
+            })
+            {
+                await loop.Start(cancellationToken);
             }
         }
 

@@ -28,7 +28,7 @@ This is the actual sequence used for the GIF recording at the top of the page.
 ### Example
 The following command executes a sequence named `sequence1.bmp` for 2 lights at 20 fps, repeating until stopped by key press. The top pixel row of the sequence maps to light `192.168.1.89` because of its order.
 
-`dotnet LifxAnimator.dll --path "sequence1.bmp" --lights 192.168.1.89 192.168.1.88 --fps 20 --repeat-count -1`
+`dotnet LifxAnimator.dll --path "sequence1.bmp" --lights 192.168.1.89 192.168.1.88`
 
 ### Parameters
 <dl>
@@ -38,11 +38,11 @@ The following command executes a sequence named `sequence1.bmp` for 2 lights at 
   <dt>--lights</dt>
   <dd>Space-separated, ordered list of IP addresses. The first light maps to the topmost pixel row of the sequence image.</dd>
   
-  <dt>--fps (optional, default=10)</dt>
+  <dt>--fps (optional, default=20)</dt>
   <dd>Frames per second. Limited to 20, the max recommended send rate of the LIFX LAN protocol.</dd>
   
-  <dt>--repeat-count (optional, default=0)</dt>
-  <dd>A negative number repeats until stopped.</dd>
+  <dt>--repeat-count / --repeat-seconds (optional)</dt>
+  <dd>If not specified then repeats until stopped by key press.</dd>
   
   <dt>--smooth-transitions (optional, default=off)</dt>
   <dd>Smoothly adjust color and brightness when transitioning frames.</dd>
