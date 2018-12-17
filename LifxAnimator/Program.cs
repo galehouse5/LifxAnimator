@@ -82,7 +82,6 @@ namespace LifxAnimator
                 {
                     BrightnessFactor = options.BrightnessFactor
                 }).ToArray();
-            int initialConsoleCursorTop = Console.CursorTop;
 
             using (RenderingLoop loop = new RenderingLoop(
                 sequence: Image.Load<Rgb24>(options.Path),
@@ -96,28 +95,18 @@ namespace LifxAnimator
                 RepeatMilliseconds = options.RepeatSeconds * 1000L,
                 SmoothTransitions = options.SmoothTransitions,
 
-                OnRenderingFrame = (frameNumber, loop2) =>
+                OnRenderingFrame = (frameNumber, repeatNumber, elapsedMilliseconds, loop2) =>
                 {
-                    Console.SetCursorPosition(0, initialConsoleCursorTop);
-                    ConsoleHelper.OverwriteLine($"Rendering frame {frameNumber} / {loop2.FrameCount}:");
-                },
-
-                OnRenderingLight = (light, color, loop2) =>
-                {
-                    ConsoleHelper.OverwriteLine($" - {light.EndPoint.Address}: R={color.R:d3}, G={color.G:d3}, B={color.B:d3}");
-                },
-
-                OnFrameRendered = (repeatNumber, elapsedMilliseconds, loop2) =>
-                {
-                    ConsoleHelper.OverwriteLine();
-                    ConsoleHelper.OverwriteLine(loop2.RepeatUntilCancelled ? "Repeating until stopped. Press any key to stop..."
-                        : loop2.RepeatCount.HasValue ? $"Repeating {loop2.RepeatCount - repeatNumber} more time(s). Press any key to stop..."
-                        : loop2.RepeatMilliseconds.HasValue ? $"Repeating for {(loop2.RepeatMilliseconds - elapsedMilliseconds) / 1000f:n2} more second(s). Press any key to stop..."
-                        : throw new NotSupportedException());
+                    string repeatingDescription = loop2.RepeatUntilCancelled ? "until stopped"
+                        : loop2.RepeatCount.HasValue ? $"{loop2.RepeatCount - repeatNumber} time(s)"
+                        : loop2.RepeatMilliseconds.HasValue ? $"for {(loop2.RepeatMilliseconds - elapsedMilliseconds) / 1000:n0} sec"
+                        : throw new NotSupportedException();
+                    Console.Write($"\rRendering frame {frameNumber} / {loop2.FrameCount}. Repeating {repeatingDescription}. Press any key to stop...");
                 }
             })
             {
                 await loop.Start(cancellationToken);
+                Console.WriteLine();
             }
         }
 

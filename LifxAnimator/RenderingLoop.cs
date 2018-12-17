@@ -8,9 +8,7 @@ using System.Threading.Tasks;
 
 namespace LifxAnimator
 {
-    public delegate void RenderingFrame(int frameNumber, RenderingLoop loop);
-    public delegate void RenderingLight(LifxLight light, Rgb24 color, RenderingLoop loop);
-    public delegate void FrameRendered(int repeatNumber, long elapsedMilliseconds, RenderingLoop loop);
+    public delegate void RenderingFrame(int frameNumber, int repeatNumber, long elapsedMilliseconds, RenderingLoop loop);
 
     public class RenderingLoop : IDisposable
     {
@@ -36,8 +34,6 @@ namespace LifxAnimator
         public int FrameCount => sequence.Width;
 
         public RenderingFrame OnRenderingFrame { get; set; }
-        public RenderingLight OnRenderingLight { get; set; }
-        public FrameRendered OnFrameRendered { get; set; }
 
         protected bool ShouldRenderAnotherFrame(int repeatNumber, Stopwatch timer, CancellationToken cancellationToken)
         {
@@ -57,7 +53,6 @@ namespace LifxAnimator
                 LifxLight light = lights[lightIndex];
                 Rgb24 color = light.GetColor(frameIndex);
 
-                OnRenderingLight?.Invoke(light, color, this);
                 messages[lightIndex] = Task.Run(() => light.SendSetColorMessage(frameIndex, client,
                     transitionDuration: SmoothTransitions ? smoothTransitionDuration : 0),
                     cancellationToken);
@@ -75,9 +70,8 @@ namespace LifxAnimator
             {
                 for (int frameIndex = 0; frameIndex < FrameCount && ShouldRenderAnotherFrame(repeatNumber, timer, cancellationToken); frameIndex++)
                 {
-                    OnRenderingFrame?.Invoke(frameIndex + 1, this);
+                    OnRenderingFrame?.Invoke(frameIndex + 1, repeatNumber, timer.ElapsedMilliseconds, this);
                     await RenderFrame(frameIndex, client, cancellationToken);
-                    OnFrameRendered?.Invoke(repeatNumber, timer.ElapsedMilliseconds, this);
 
                     frameCount++;
                     int nextFrameRenderTime = frameCount * 1000 / framesPerSecond;
