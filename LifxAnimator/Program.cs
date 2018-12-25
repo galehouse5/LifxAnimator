@@ -51,8 +51,8 @@ namespace LifxAnimator
                 if (RepeatCount.HasValue && RepeatSeconds.HasValue)
                     yield return "Repeat count and repeat seconds can't both be specified.";
 
-                if (FramesPerSecond <= 0m || FramesPerSecond > 20m)
-                    yield return "FPS must be greater than 0 and less than or equal to 20.";
+                if (FramesPerSecond <= 0m || FramesPerSecond > 100m)
+                    yield return "FPS must be greater than 0 and less than or equal to 100.";
 
                 foreach (string light in Lights)
                 {

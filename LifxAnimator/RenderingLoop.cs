@@ -46,19 +46,14 @@ namespace LifxAnimator
 
         protected async Task RenderFrame(int frameIndex, UdpClient client, CancellationToken cancellationToken)
         {
-            var messages = new Task[lights.Length];
-
             for (int lightIndex = 0; lightIndex < lights.Length; lightIndex++)
             {
                 LifxLight light = lights[lightIndex];
                 Rgb24 color = light.GetColor(frameIndex);
 
-                messages[lightIndex] = Task.Run(() => light.SendSetColorMessage(frameIndex, client,
-                    transitionDuration: SmoothTransitions ? smoothTransitionDuration : 0),
-                    cancellationToken);
+                await light.SendSetColorMessage(frameIndex, client,
+                    transitionDuration: SmoothTransitions ? smoothTransitionDuration : 0);
             }
-
-            await Task.WhenAll(messages);
         }
 
         public async Task Start(CancellationToken cancellationToken)

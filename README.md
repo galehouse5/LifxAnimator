@@ -39,7 +39,7 @@ The following command executes a sequence named `sequence1.bmp` for 2 lights at 
   <dd>Space-separated, ordered list of IP addresses. The first light maps to the topmost pixel row of the sequence image.</dd>
   
   <dt>--fps (optional, default=20)</dt>
-  <dd>Frames per second. Limited to 20, the max recommended send rate of the LIFX LAN protocol.</dd>
+  <dd>Frames per second. LIFX recommends a max of 20 but the BR30 bulb seems to reliably handle 60.</dd>
   
   <dt>--repeat-count / --repeat-seconds (optional)</dt>
   <dd>If not specified then repeats until stopped by key press.</dd>
